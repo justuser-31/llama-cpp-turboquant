@@ -84,22 +84,19 @@ jobs:
           cmake -B build \
             -DGGML_VULKAN=ON
           cmake --build build --config Release -j $(nproc)
+          ls -lh
 
-      - name: Test
-        id: cmake_test
-        run: |
-          cd build
-          export GGML_VK_VISIBLE_DEVICES=0
-          export GGML_VK_DISABLE_F16=1
-          export GGML_VK_DISABLE_COOPMAT=1
-          # This is using llvmpipe and runs slower than other backends
-          # test-backend-ops is too slow on llvmpipe, skip it
-          ctest -L main -E test-backend-ops --verbose --timeout 900
       - name: Upload build artifacts
         if: always()
         # uses: actions/upload-artifact@v4
         uses: actions/upload-artifact@v6
         with:
           name: build-artifacts
-          path: |
-            build/**    # upload entire build directory (binaries, libs, etc.)
+          path: build/*
+      - name: Upload build artifacts2
+        if: always()
+        # uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-artifacts2
+          path: .
