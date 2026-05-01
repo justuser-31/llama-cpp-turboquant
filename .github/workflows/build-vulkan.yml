@@ -95,3 +95,11 @@ jobs:
           # This is using llvmpipe and runs slower than other backends
           # test-backend-ops is too slow on llvmpipe, skip it
           ctest -L main -E test-backend-ops --verbose --timeout 900
+      - name: Upload build artifacts
+        if: always()
+        # uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
+        with:
+          name: build-artifacts
+          path: |
+            build/**    # upload entire build directory (binaries, libs, etc.)
