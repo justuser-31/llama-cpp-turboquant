@@ -1,10 +1,10 @@
-name: Release
+name: Build linux vulkan x64
 
 on:
   workflow_dispatch: # allows manual triggering
     inputs:
       create_release:
-        description: 'Create new release'
+        description: 'Build linux vulkan x64'
         required: true
         type: boolean
   push:
