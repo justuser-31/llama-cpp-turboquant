@@ -1,7 +1,7 @@
-name: CI (CUDA, ubuntu)
+name: Build llama.cpp (CUDA, Ubuntu)
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # allows manual triggering
   push:
     branches:
       - master
@@ -42,7 +42,7 @@ jobs:
     steps:
       - name: Clone
         id: checkout
-        uses: actions/checkout@v4 # Updated to standard v4
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         env:
@@ -58,9 +58,11 @@ jobs:
           evict-old-files: 1d
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
-      - name: Build with CMake (llama-server only)
+      - name: Build with CMake
+        # We add CMAKE_INSTALL_PREFIX to output the final libs/bins to a specific folder
         run: |
           cmake -S . -B build -G Ninja \
+            -DCMAKE_INSTALL_PREFIX=./install \
             -DLLAMA_FATAL_WARNINGS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CUDA_ARCHITECTURES=89-real \
@@ -68,13 +70,12 @@ jobs:
             -DGGML_NATIVE=OFF \
             -DGGML_CUDA=ON \
             -DGGML_CUDA_CUB_3DOT2=ON
-          
-          # Only build the llama-server target
-          cmake --build build --config Release --target llama-server
+          cmake --build build
+          cmake --install build
 
-      - name: Upload Artifact
+      - name: Upload GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: llama-server-cuda-ubuntu
-          path: build/bin/llama-server
-          if-no-files-found: error
+          name: llama-cpp-ubuntu-cuda
+          path: ./install/*
+          retention-days: 14
