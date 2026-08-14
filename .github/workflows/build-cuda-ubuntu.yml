@@ -59,10 +59,10 @@ jobs:
           save: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
       - name: Build with CMake
-        # We add CMAKE_INSTALL_PREFIX to output the final libs/bins to a specific folder
+        # Added -DBUILD_SHARED_LIBS=ON to generate .so files instead of static objects
         run: |
           cmake -S . -B build -G Ninja \
-            -DCMAKE_INSTALL_PREFIX=./install \
+            -DBUILD_SHARED_LIBS=ON \
             -DLLAMA_FATAL_WARNINGS=ON \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_CUDA_ARCHITECTURES=89-real \
@@ -71,11 +71,18 @@ jobs:
             -DGGML_CUDA=ON \
             -DGGML_CUDA_CUB_3DOT2=ON
           cmake --build build
-          cmake --install build
+
+      - name: Gather artifacts into a flat directory
+        run: |
+          mkdir -p portable-release
+          # Gather all compiled executables (llama-cli, llama-server, etc.)
+          find build/bin -type f -executable -exec cp {} portable-release/ \; 2>/dev/null || true
+          # Gather all shared libraries (.so files)
+          find build -type f -name "*.so" -exec cp {} portable-release/ \;
 
       - name: Upload GitHub Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: llama-cpp-ubuntu-cuda
-          path: ./install/*
+          path: portable-release/
           retention-days: 14
