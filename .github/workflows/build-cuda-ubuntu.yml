@@ -80,7 +80,15 @@ jobs:
           find build -type f -name "*.so*" -exec cp {} portable-release/ \;
           find build -type l -name "*.so*" -exec cp -d {} portable-release/ \;
           
-          ldd build/bin/llama-server | grep "/usr/local/cuda" | awk '{print $3}' | xargs -I {} cp -L {} portable-release/ || true
+          # Universal copy for CUDA/NCCL runtimes. Runs ldd on all binaries/libs, 
+          # filters for libcu* or libnccl*, excludes host driver libcuda.so, and copies them over.
+          find portable-release/ -type f \( -executable -o -name "*.so*" \) -exec ldd {} + 2>/dev/null \
+            | awk '/=>/ {print $1, $3}' \
+            | sort -u \
+            | grep -E "^(libcu|libnccl)" \
+            | grep -v "^libcuda\.so" \
+            | awk '{print $2}' \
+            | xargs -I {} cp -n -L {} portable-release/ || true
 
       - name: Upload GitHub Artifacts
         uses: actions/upload-artifact@v4
